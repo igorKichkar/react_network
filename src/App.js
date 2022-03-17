@@ -1,8 +1,11 @@
 import './styles/App.css';
-import {useState} from "react";
+import {useMemo, useState} from "react";
 import PostList from "./components/PostList";
 import PostForm from "./components/PostForm";
-import MySelect from "./UI/select/mySelect";
+import PostFilter from "./components/PostFilter";
+import MyModal from "./components/MyModal/MyModal";
+import MyButton from "./UI/button/MyButton";
+import {usePosts} from "./hooks/usePosts";
 
 function App() {
     const [posts, setPosts] = useState([
@@ -11,40 +14,31 @@ function App() {
         {id: 3, title: 'iJavaScript 3', body: 'yDescription'},
     ])
 
-    const [selectedSort, setSelectedSort] = useState('')
+    const [filter, setFilter] = useState({sort: '', query: ''});
+    const [modal, setModal] = useState(false);
+    const sortedAndSearchedPosts = usePosts(posts, filter.sort, filter.query);
+
 
 // калбэк функция для предачи данных от ребенка родителю
     const createPost = (newPost) => {
         setPosts([...posts, newPost])
+        setModal(false)
     }
 
     const removePost = (post) => {
         setPosts(posts.filter(p => p.id !== post.id))
     }
-
-    const sortPosts = (sort) => {
-        setSelectedSort(sort);
-        setPosts([...posts].sort((a, b) => a[sort].localeCompare(b[sort])))
-    }
-
     return (
         <div className="App">
-            <PostForm create={createPost}/>
+            <MyButton onClick={() => setModal(true)}>
+                Create post
+            </MyButton>
+            <MyModal visible={modal} setVisible={setModal}>
+                <PostForm create={createPost}/>
+            </MyModal>
             <hr style={{margin: '15px 0'}}/>
-            <MySelect
-                value={selectedSort}
-                onChange={sortPosts}
-                defaultValue='Sorting'
-                options={[
-                    {value: 'title', name: 'by name'},
-                    {value: 'body', name: 'by description'}
-                ]}
-            />
-            {
-                posts.length
-                    ? <PostList posts={posts} remove={removePost}/>
-                    : <h1 style={{textAlign: 'center'}}>Posts not found</h1>
-            }
+            <PostFilter filter={filter} setFilter={setFilter}/>
+            <PostList posts={sortedAndSearchedPosts} remove={removePost}/>
         </div>
     );
 }
